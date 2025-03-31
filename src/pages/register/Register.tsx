@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { authService } from "@/services/AuthService";
 import { useEffect } from "react";
@@ -49,12 +49,15 @@ export function Register() {
     resolver: zodResolver(formSchema),
   });
 
+  const navigate = useNavigate();
+
   function onSubmit(values: z.infer<typeForm>) {
     const { username, password } = values;
     authService
       .register({ username, password })
       .then(() => {
         console.log("Registration successful");
+        navigate("/login");
       })
       .catch((error) => {
         console.error("Registration failed:", error);

@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { authService } from "@/services/AuthService";
 import { useAuth } from "@/contexts/AuthContext";
+import { use } from "react";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "Username is Required" }),
@@ -29,6 +30,8 @@ type typeForm = typeof formSchema;
 
 export function Login() {
   const { login } = useAuth();
+
+  const navigate = useNavigate();
   const form = useForm<z.infer<typeForm>>({
     resolver: zodResolver(formSchema),
   });
@@ -38,6 +41,7 @@ export function Login() {
     login({ username, password })
       .then(() => {
         console.log("Login successful");
+        navigate("/");
       })
       .catch((error) => {
         console.error("Login failed:", error);
@@ -45,7 +49,8 @@ export function Login() {
   }
 
   return (
-    <>
+    // width 80 %
+    <div className=" mx-auto mt-10">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -103,6 +108,6 @@ export function Login() {
           <Button type="submit">Login</Button>
         </form>
       </Form>
-    </>
+    </div>
   );
 }

@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+@theme {
+  --breakpoint-ss: 500px;
+}
 
 :root {
   --background: oklch(1 0 0);
@@ -147,11 +150,11 @@ body {
 }
 
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
+  /* max-width: 1280px; */
+  /* margin: 0 auto; */
   padding: 2rem;
   text-align: left;
-  width: 80%;
+  width: 100%;
 }
 @media screen and (max-width: 640px) {
   #root {
@@ -159,7 +162,6 @@ body {
   }
 }
 body {
-  display: flex;
   color: var(--foreground);
   background-color: var(--background);
   min-width: 380px;
