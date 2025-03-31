@@ -85,16 +85,17 @@ export function Register() {
 
   return (
     <>
-      <Link to={"/register"}>
-        {" "}
-        <p className="text-left text-muted-foreground">
-          Don't have an account yet?
-        </p>
-      </Link>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-8 max-w-3xl mx-auto py-10">
+          className="space-y-8 max-w-3xl mx-auto ">
+          <p className="text-3xl font-bold mb-5"> Register Page</p>
+          <Link to={"/login"}>
+            {" "}
+            <p className="text-muted-foreground mb-5">
+              Already have an account ?
+            </p>
+          </Link>
           <FormField
             //control acts as between react hook form and the UI custom component
             // bcz we cannot directly register the custom component with ( ...register )

@@ -18,6 +18,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Link } from "react-router-dom";
 
 import { authService } from "@/services/AuthService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "Username is Required" }),
@@ -27,14 +28,14 @@ const formSchema = z.object({
 type typeForm = typeof formSchema;
 
 export function Login() {
+  const { login } = useAuth();
   const form = useForm<z.infer<typeForm>>({
     resolver: zodResolver(formSchema),
   });
 
   function onSubmit(values: z.infer<typeForm>) {
     const { username, password } = values;
-    authService
-      .login({ username, password })
+    login({ username, password })
       .then(() => {
         console.log("Login successful");
       })
@@ -45,16 +46,17 @@ export function Login() {
 
   return (
     <>
-      <Link to={"/register"}>
-        {" "}
-        <p className="text-left text-muted-foreground">
-          Don't have an account yet?
-        </p>
-      </Link>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-8 max-w-3xl mx-auto py-10">
+          className="space-y-8 max-w-3xl mx-auto ">
+          <p className="text-3xl font-bold mb-5"> Login Page</p>
+          <Link to={"/register"}>
+            {" "}
+            <p className="text-muted-foreground mb-5">
+              Don't have an account yet?
+            </p>
+          </Link>
           <FormField
             //control acts as between react hook form and the UI custom component
             // bcz we cannot directly register the custom component with ( ...register )
@@ -73,10 +75,10 @@ export function Login() {
                     {...field}
                   />
                 </FormControl>
-                <FormDescription className="text-left">
+                <FormDescription className="">
                   Enter your username.
                 </FormDescription>
-                <FormMessage className="text-left" />
+                <FormMessage className="" />
               </FormItem>
             )}
           />
@@ -90,10 +92,10 @@ export function Login() {
                 <FormControl>
                   <PasswordInput className="py-6" {...field} />
                 </FormControl>
-                <FormDescription className="text-left">
+                <FormDescription className="">
                   Enter your password.
                 </FormDescription>
-                <FormMessage className="text-left" />
+                <FormMessage className="" />
               </FormItem>
             )}
           />

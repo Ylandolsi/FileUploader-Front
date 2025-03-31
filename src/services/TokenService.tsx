@@ -26,7 +26,6 @@ export const tokenService = {
     inMemoryToken = tokens.accessToken;
 
     localStorage.setItem("refreshToken", tokens.refreshToken);
-    localStorage.setItem("isLoggedIn", "true");
   },
 
   clearTokens: (): void => {
@@ -34,6 +33,7 @@ export const tokenService = {
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("secondVerify");
     localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("user");
   },
 
   isTokenExpired: (): boolean => {

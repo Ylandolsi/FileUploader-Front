@@ -24,13 +24,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<string | null>(null);
 
   useEffect(() => {
+    const storedIsLoggedIn = localStorage.getItem("isLoggedIn");
+    const storedUser = localStorage.getItem("user");
+
+    if (storedIsLoggedIn === "true") {
+      setIsLoggedIn(true);
+      setUser(storedUser);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!isLoggedIn || !user) return;
 
     const checkTokenInterval = setInterval(async () => {
       if (!(await authService.checkAndRefreshToken(user))) {
         logout();
       }
-    }, 60000); // every minute check if we have to refresh the token
+    }, 10000); //10sec // every minute check if we have to refresh the token
 
     return () => clearInterval(checkTokenInterval);
   }, [isLoggedIn, user]);
@@ -38,9 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (loginRequest: AuthRequest) => {
     try {
       const userData = await authService.login(loginRequest);
-      setUser(loginRequest.username);
       tokenService.saveTokens(userData);
+      setUser(loginRequest.username);
       setIsLoggedIn(true);
+
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("user", loginRequest.username);
     } catch (error) {
       console.error("Login failed:", error);
       throw error;

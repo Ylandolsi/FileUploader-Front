@@ -82,9 +82,12 @@ export const authService = {
   },
 
   checkAndRefreshToken: async (userName: string): Promise<boolean> => {
+    console.log("checkAndRefreshToken");
     if (tokenService.isTokenExpired()) {
       try {
+        console.log("Token expired, refreshing...");
         await authService.refreshToken(userName);
+        console.log("Token refreshed successfully");
         return true;
       } catch (error) {
         return false;
