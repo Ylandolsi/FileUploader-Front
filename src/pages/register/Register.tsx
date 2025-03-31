@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-
 import {
   Form,
   FormControl,
@@ -18,15 +17,34 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Link } from "react-router-dom";
 
 import { authService } from "@/services/AuthService";
+import { useEffect } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 
-const formSchema = z.object({
-  username: z.string().min(1, { message: "Username is Required" }),
-  password: z.string().min(1, { message: "Password is required" }),
-});
+const formSchema = z
+  .object({
+    username: z.string().min(1, { message: "Username is Required" }),
+    password: z
+      .string()
+      .min(1, { message: "Password is required" })
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+        {
+          message:
+            "Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character",
+        }
+      ),
+    confirmPassword: z
+      .string()
+      .min(1, { message: "Confirm Password is required" }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type typeForm = typeof formSchema;
 
-export function Login() {
+export function Register() {
   const form = useForm<z.infer<typeForm>>({
     resolver: zodResolver(formSchema),
   });
@@ -34,14 +52,36 @@ export function Login() {
   function onSubmit(values: z.infer<typeForm>) {
     const { username, password } = values;
     authService
-      .login({ username, password })
+      .register({ username, password })
       .then(() => {
-        console.log("Login successful");
+        console.log("Registration successful");
       })
       .catch((error) => {
-        console.error("Login failed:", error);
+        console.error("Registration failed:", error);
       });
   }
+
+  const username = form.watch("username");
+  const debouncedUsername = useDebounce(username, 1000);
+  useEffect(() => {
+    if (!debouncedUsername) return;
+    console.log("Checking username availability:", debouncedUsername);
+    authService
+      .checkUserNameAvailable(debouncedUsername)
+      .then((isAvailable) => {
+        if (!isAvailable) {
+          form.setError("username", {
+            type: "manual",
+            message: "Username is already taken",
+          });
+        } else {
+          form.clearErrors("username");
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking username availability:", error);
+      });
+  }, [debouncedUsername]);
 
   return (
     <>
@@ -97,8 +137,24 @@ export function Login() {
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem className="">
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <PasswordInput className="py-6" {...field} />
+                </FormControl>
+                <FormDescription className="text-left">
+                  Confirm your password.
+                </FormDescription>
+                <FormMessage className="text-left" />
+              </FormItem>
+            )}
+          />
 
-          <Button type="submit">Login</Button>
+          <Button type="submit">Register</Button>
         </form>
       </Form>
     </>

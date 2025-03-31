@@ -92,4 +92,23 @@ export const authService = {
     }
     return true;
   },
+
+  checkUserNameAvailable: async (userName: string): Promise<boolean> => {
+    const response = await fetch(
+      `${apiurl}/Auth/check-username?username=${userName}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Check Username Failed");
+    }
+    const isAvailable = await response.json();
+    console.log("isAvailable", isAvailable.available);
+    return isAvailable.available;
+  },
 };

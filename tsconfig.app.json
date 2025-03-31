@@ -27,5 +27,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "components/ui", "lib"]
+  "include": ["src", "components/ui", "lib", "vite.config.ts"]
 }
