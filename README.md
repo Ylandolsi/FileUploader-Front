@@ -33,5 +33,5 @@ _Secure user authentication_
 
 ### Download Shared File
 
-![Download Shared Screen](download/login.png)
+![Download Shared Screen](download/download.png)
 _download shared file_
