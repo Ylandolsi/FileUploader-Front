@@ -31,7 +31,7 @@ export function SharedFileDownload() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] p-4">
-      <div className="max-w-md w-full bg-gray-100 dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+      <div className="max-w-md w-full bg-gray-400/50 dark:bg-gray-700/20 p-8 rounded-xl shadow-lg">
         <h1 className="text-2xl font-bold mb-4">Shared File Download</h1>
 
         {isLoading ? (
