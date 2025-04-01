@@ -15,6 +15,7 @@ interface AuthContextType {
   user: string | null;
   login: (loginRequest: AuthRequest) => Promise<void>;
   logout: () => void;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,17 +23,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [user, setUser] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const storedIsLoggedIn = localStorage.getItem("isLoggedIn");
-    const storedUser = localStorage.getItem("user");
+    const initAuth = async () => {
+      const storedIsLoggedIn = localStorage.getItem("isLoggedIn");
+      const storedUser = localStorage.getItem("user");
+      if (storedIsLoggedIn === "true" && storedUser) {
+        try {
+          const refreshSuccessful = await authService.checkAndRefreshToken(
+            storedUser
+          );
 
-    if (storedIsLoggedIn === "true") {
-      setIsLoggedIn(true);
-      setUser(storedUser);
-    }
+          if (refreshSuccessful) {
+            setIsLoggedIn(true);
+            setUser(storedUser);
+          } else {
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("user");
+          }
+        } catch (error) {
+          console.error("Failed to refresh token on startup:", error);
+          localStorage.removeItem("isLoggedIn");
+          localStorage.removeItem("user");
+        }
+      }
+
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
-
   useEffect(() => {
     if (!isLoggedIn || !user) return;
 
@@ -40,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!(await authService.checkAndRefreshToken(user))) {
         logout();
       }
-    }, 10000); //10sec // every minute check if we have to refresh the token
+    }, 60000); // every minute check if we have to refresh the token
 
     return () => clearInterval(checkTokenInterval);
   }, [isLoggedIn, user]);
@@ -67,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

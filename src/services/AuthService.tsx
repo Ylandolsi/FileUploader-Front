@@ -2,35 +2,84 @@ import { apiurl } from "../constants/apiurl";
 import { tokenService } from "./TokenService";
 
 import { AuthRequest, AuthTokens } from "../types/types";
-
+const pendingRequests = new Map();
 export const authService = {
+  // to avoid rerun the same request ( strict mode )
   async refreshToken(userName: string): Promise<AuthTokens> {
-    const refreshToken = tokenService.getRefreshToken();
-    const accessToken = tokenService.getAccessToken();
+    const requestKey = `refresh_${userName}`;
 
-    if (!refreshToken || !accessToken) {
+    if (pendingRequests.has(requestKey)) {
+      console.log("Reusing pending refresh token request");
+      return pendingRequests.get(requestKey);
+    }
+
+    const refreshToken = tokenService.getRefreshToken();
+    if (!refreshToken) {
       throw new Error("No tokens available");
     }
 
-    const response = await fetch(`${apiurl}/Auth/refresh-token`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userName,
-        refreshToken,
-      }),
-    });
+    const requestPromise = (async () => {
+      try {
+        console.log("Making refresh token request");
+        const response = await fetch(`${apiurl}/Auth/refresh-token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userName,
+            refreshToken,
+          }),
+        });
 
-    if (!response.ok) {
-      throw new Error("Invalid refresh token");
+        if (!response.ok) {
+          throw new Error("Invalid refresh token");
+        }
+
+        const tokens = await response.json();
+        tokenService.saveTokens(tokens);
+        return tokens;
+      } finally {
+        // Short timeout to handle React's strict mode double invocation
+        setTimeout(() => {
+          pendingRequests.delete(requestKey);
+        }, 100);
+      }
+    })();
+
+    // Store the promise
+    pendingRequests.set(requestKey, requestPromise);
+    return requestPromise;
+  },
+
+  checkAndRefreshToken: async (userName: string): Promise<boolean> => {
+    const requestKey = `check_${userName}`;
+
+    if (pendingRequests.has(requestKey)) {
+      console.log("Reusing pending check token request");
+      return pendingRequests.get(requestKey);
     }
 
-    const tokens = await response.json();
-    tokenService.saveTokens(tokens);
-    return tokens;
+    const requestPromise = (async () => {
+      try {
+        if (tokenService.isTokenExpired()) {
+          try {
+            await authService.refreshToken(userName);
+            return true;
+          } catch (error) {
+            return false;
+          }
+        }
+        return true;
+      } finally {
+        setTimeout(() => {
+          pendingRequests.delete(requestKey);
+        }, 100);
+      }
+    })();
+
+    pendingRequests.set(requestKey, requestPromise);
+    return requestPromise;
   },
 
   login: async (loginData: AuthRequest): Promise<AuthTokens> => {
@@ -79,21 +128,6 @@ export const authService = {
     if (!response.ok) {
       throw new Error("Register Failed");
     }
-  },
-
-  checkAndRefreshToken: async (userName: string): Promise<boolean> => {
-    console.log("checkAndRefreshToken");
-    if (tokenService.isTokenExpired()) {
-      try {
-        console.log("Token expired, refreshing...");
-        await authService.refreshToken(userName);
-        console.log("Token refreshed successfully");
-        return true;
-      } catch (error) {
-        return false;
-      }
-    }
-    return true;
   },
 
   checkUserNameAvailable: async (userName: string): Promise<boolean> => {

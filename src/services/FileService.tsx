@@ -34,7 +34,7 @@ export const FileService = {
     return files;
   },
   deleteFile: async (fileId: number): Promise<void> => {
-    const response = await fetch(`${apiurl}/File/${fileId}`, {
+    const response = await fetch(`${apiurl}/File/delete/${fileId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${tokenService.getAccessToken()}`,
@@ -54,7 +54,11 @@ export const FileService = {
     if (!response.ok) {
       throw new Error("Failed to download file");
     }
-    const url = await response.json();
-    window.location.href = url.downloadUrl;
+    let url = await response.json();
+    url = url.message;
+    if (!url.downloadurl) {
+      throw new Error("Download URL not found");
+    }
+    window.location.href = url.downloadurl;
   },
 };

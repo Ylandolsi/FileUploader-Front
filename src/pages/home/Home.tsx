@@ -7,8 +7,7 @@ import { RightPart } from "./RightPart";
 
 export function Home() {
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { isLoggedIn, loading } = useAuth();
 
   const [filesOfCurrentFolder, setFilesOfCurrentFolder] = useState<FileType[]>(
     []
@@ -17,7 +16,7 @@ export function Home() {
   useEffect(() => {
     if (!isLoggedIn) {
       navigate("/login");
-    } else setLoading(false);
+    }
   }, []);
 
   if (loading) {

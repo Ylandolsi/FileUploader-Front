@@ -24,7 +24,6 @@ export const tokenService = {
 
   saveTokens: (tokens: TokenPair): void => {
     inMemoryToken = tokens.accessToken;
-
     localStorage.setItem("refreshToken", tokens.refreshToken);
   },
 

@@ -1,7 +1,7 @@
 export interface FileType {
   id: number;
   name: string;
-  size: string;
+  size: number;
   url: string;
   createdAt: Date;
   folderId: number;
