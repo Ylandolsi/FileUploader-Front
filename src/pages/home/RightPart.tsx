@@ -4,9 +4,13 @@ import { FileType } from "@/types/filesTypes";
 export function RightPart({
   filesOfCurrentFolder,
   setFilesOfCurrentFolder,
+  refreshTrigger,
+  setRefreshTrigger,
 }: {
   filesOfCurrentFolder: FileType[];
   setFilesOfCurrentFolder: (files: FileType[]) => void;
+  refreshTrigger: number;
+  setRefreshTrigger: (trigger: number) => void;
 }) {
   const [selectedFileData, setselectedFileData] = useState<FileType | null>(
     null
@@ -42,6 +46,8 @@ export function RightPart({
         <FileSideBar
           selectedFileData={selectedFileData}
           setselectedFileData={setselectedFileData}
+          refreshTrigger={refreshTrigger}
+          setRefreshTrigger={setRefreshTrigger}
         />
       )}
     </div>

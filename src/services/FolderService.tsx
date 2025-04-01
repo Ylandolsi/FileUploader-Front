@@ -4,7 +4,7 @@ import { FolderBase } from "@/types/foldersTypes";
 export const FolderService = {
   async createFolder(
     folderName: string,
-    parentId: string
+    parentId: number
   ): Promise<FolderBase> {
     const response = await fetch(`${apiurl}/Folder/create`, {
       method: "POST",
@@ -14,7 +14,7 @@ export const FolderService = {
       },
       body: JSON.stringify({
         name: folderName,
-        parentId: parentId,
+        parentFolderId: parentId,
       }),
     });
     if (!response.ok) {

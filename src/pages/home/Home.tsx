@@ -12,6 +12,7 @@ export function Home() {
   const [filesOfCurrentFolder, setFilesOfCurrentFolder] = useState<FileType[]>(
     []
   );
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -29,12 +30,16 @@ export function Home() {
         <LeftPart
           filesOfCurrentFolder={filesOfCurrentFolder}
           setFilesOfCurrentFolder={setFilesOfCurrentFolder}
+          refreshTrigger={refreshTrigger}
+          setRefreshTrigger={setRefreshTrigger}
         />
       </div>
       <div className=" grow h-full p-3">
         <RightPart
           filesOfCurrentFolder={filesOfCurrentFolder}
           setFilesOfCurrentFolder={setFilesOfCurrentFolder}
+          refreshTrigger={refreshTrigger}
+          setRefreshTrigger={setRefreshTrigger}
         />
       </div>
     </div>

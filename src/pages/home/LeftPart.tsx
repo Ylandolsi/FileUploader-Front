@@ -1,9 +1,17 @@
 import { FolderService } from "@/services/FolderService";
 import { FolderBase } from "@/types/foldersTypes";
-import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, Folder } from "lucide-react";
+import {
+  ChartSpline,
+  ChevronDown,
+  ChevronRight,
+  CircleX,
+  File,
+  Folder,
+  FolderInput,
+} from "lucide-react";
 import { FileType } from "@/types/filesTypes";
 import { FileService } from "@/services/FileService";
+import { useEffect, useState, useCallback } from "react";
 
 const FolderItem = ({
   folder,
@@ -11,20 +19,38 @@ const FolderItem = ({
   setCurrentFolderId,
   setFilesOfCurrentFolder,
   currentFolderId,
+  refreshTrigger,
 }: {
   folder: FolderBase;
   level: number;
   currentFolderId: number;
   setCurrentFolderId: (id: number) => void;
   setFilesOfCurrentFolder: (files: FileType[]) => void;
+  refreshTrigger: number;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [subFolders, setSubFolders] = useState<FolderBase[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const fetchSubFolders = useCallback(async () => {
+    if (expanded) {
+      try {
+        setLoading(true);
+        const subFolderList = await FolderService.getSubFolders(folder.id);
+        setSubFolders(subFolderList);
+      } catch (error) {
+        console.error(`[${folder.name}] Error fetching subfolders:`, error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [folder.id, folder.name, expanded]);
+
   useEffect(() => {
-    console.log(`[${folder.name}] subfolder updated =`, subFolders);
-  }, [subFolders, folder.name]);
+    if (expanded) {
+      fetchSubFolders();
+    }
+  }, [refreshTrigger, expanded, fetchSubFolders]);
 
   const handleClick = async () => {
     setLoading(true);
@@ -37,16 +63,7 @@ const FolderItem = ({
     setExpanded(newExpandedState);
 
     if (newExpandedState && subFolders.length === 0) {
-      try {
-        console.log(`[${folder.name}] Fetching subfolders...`);
-        const subFolderList = await FolderService.getSubFolders(folder.id);
-        console.log(`[${folder.name}] Got subfolder list:`, subFolderList);
-
-        setSubFolders(subFolderList);
-        console.log(`[${folder.name}] State update called`);
-      } catch (error) {
-        console.error(`[${folder.name}] Error fetching subfolders:`, error);
-      }
+      await fetchSubFolders();
     }
 
     setLoading(false);
@@ -55,10 +72,11 @@ const FolderItem = ({
   const paddingLeft = level * 16;
 
   return (
-    <div className="folder-item" key={folder.id}>
+    <div className="folder-item">
       <div
         onClick={handleClick}
-        className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 py-2 transition-colors"
+        className={`flex items-center cursor-pointer hover:bg-gray-700/50 py-2 transition-colors
+          ${folder.id === currentFolderId ? "bg-gray-500/40" : ""}`}
         style={{ paddingLeft: `${paddingLeft}px` }}>
         <span className="mr-1">
           {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -67,7 +85,7 @@ const FolderItem = ({
           className={`${
             currentFolderId === folder.id
               ? "text-blue-500 font-semibold"
-              : "text-black "
+              : "text-black dark:text-white"
           } mr-2`}>
           {folder.name || "Unnamed Folder"}
         </span>
@@ -82,11 +100,13 @@ const FolderItem = ({
         <div className="folder-children">
           {subFolders.map((subFolder) => (
             <FolderItem
+              key={subFolder.id}
               folder={subFolder}
               level={level + 1}
               setCurrentFolderId={setCurrentFolderId}
               setFilesOfCurrentFolder={setFilesOfCurrentFolder}
               currentFolderId={currentFolderId}
+              refreshTrigger={refreshTrigger}
             />
           ))}
         </div>
@@ -98,17 +118,21 @@ const FolderItem = ({
 export function LeftPart({
   setFilesOfCurrentFolder,
   filesOfCurrentFolder,
+  refreshTrigger,
+  setRefreshTrigger,
 }: {
   setFilesOfCurrentFolder: (files: FileType[]) => void;
   filesOfCurrentFolder: FileType[];
+  refreshTrigger: number;
+  setRefreshTrigger: (trigger: number) => void;
 }) {
-  const [folders, setFolders] = useState<FolderBase[]>([]);
+  const [Root, setRoot] = useState<FolderBase[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<number>(1);
 
   useEffect(() => {
     const fetchFolders = async () => {
       let folderList = await FolderService.getRootFolders();
-      setFolders(folderList);
+      setRoot(folderList);
     };
 
     const fetchFiles = async () => {
@@ -118,29 +142,93 @@ export function LeftPart({
 
     fetchFolders();
     fetchFiles();
-  }, [currentFolderId, setFilesOfCurrentFolder]);
+  }, [currentFolderId, setFilesOfCurrentFolder, refreshTrigger]);
+
+  const handleNewFolder = async () => {
+    const newFolderName = prompt("Enter new folder name:");
+    if (!newFolderName) return;
+    try {
+      await FolderService.createFolder(newFolderName, currentFolderId);
+      setRefreshTrigger(refreshTrigger + 1);
+    } catch (error) {
+      console.error("Error creating folder:", error);
+    }
+  };
+
+  const handleUploadFile = async () => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "*";
+    fileInput.onchange = async (event) => {
+      const files = event.target.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        try {
+          await FileService.uploadFile(file, currentFolderId);
+          setRefreshTrigger(refreshTrigger + 1);
+        } catch (error) {
+          console.error("Error uploading file:", error);
+        }
+      }
+    };
+    fileInput.click();
+  };
+
+  const handleDeleteFolder = async () => {
+    if (currentFolderId === 1) {
+      alert("You cannot delete the root folder.");
+      return;
+    }
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this folder? This action cannot be undone."
+    );
+    if (confirmDelete) {
+      try {
+        await FolderService.deleteFolder(currentFolderId);
+        setRefreshTrigger(refreshTrigger + 1);
+      } catch (error) {
+        console.error("Error deleting folder:", error);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col">
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3">
-          <button className="p-1 bg-gray-200/70 dark:bg-gray-500/40 border-2 dark:border-amber-50 border-black rounded-md">
+          <button
+            onClick={handleNewFolder}
+            className="flex gap-1 p-2 bg-gray-200/70 dark:bg-gray-500/40 border-2 dark:border-amber-50 border-black rounded-md">
+            <FolderInput />
             New Folder
           </button>
-          <button className="p-1 bg-gray-200/70 dark:bg-gray-500/40 border-2 dark:border-amber-50 border-black rounded-md">
+          <button
+            onClick={handleUploadFile}
+            className="flex gap-1 p-2 bg-gray-200/70 dark:bg-gray-500/40 border-2 dark:border-amber-50 border-black rounded-md">
+            <File />
             New File
           </button>
+          {currentFolderId !== 1 && (
+            <button
+              onClick={handleDeleteFolder}
+              className="flex gap-1 p-2 bg-gray-200/70 dark:bg-gray-500/40 border-2 dark:border-amber-50 border-black rounded-md">
+              <CircleX />
+              Delete Folder
+            </button>
+          )}
         </div>
       </div>
 
       <div className="mt-4">
-        {folders.map((folder) => (
+        {Root.map((root) => (
           <FolderItem
-            folder={folders[0]}
+            key={root.id}
+            folder={root}
             level={0}
             currentFolderId={currentFolderId}
             setCurrentFolderId={setCurrentFolderId}
             setFilesOfCurrentFolder={setFilesOfCurrentFolder}
+            refreshTrigger={refreshTrigger}
           />
         ))}
       </div>

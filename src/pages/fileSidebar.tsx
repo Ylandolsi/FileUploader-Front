@@ -6,9 +6,13 @@ import { X } from "lucide-react";
 export function FileSideBar({
   selectedFileData,
   setselectedFileData,
+  refreshTrigger,
+  setRefreshTrigger,
 }: {
   selectedFileData: FileType;
   setselectedFileData: (file: FileType | null) => void;
+  refreshTrigger: number;
+  setRefreshTrigger: (trigger: number) => void;
 }) {
   const handleDownload = async () => {
     try {
@@ -19,12 +23,48 @@ export function FileSideBar({
     }
   };
   const handleDelete = async () => {
+    console.log("Deleting file with ID:", selectedFileData.id);
+    if (!selectedFileData) return;
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete the file "${selectedFileData.name}"?`
+    );
+    if (!confirmDelete) return;
     try {
       await FileService.deleteFile(selectedFileData.id);
       setselectedFileData(null);
-      window.location.reload();
+      setRefreshTrigger(refreshTrigger + 1);
     } catch (error) {
       console.error("Error deleting file:", error);
+    }
+  };
+
+  const handleShare = async () => {
+    console.log("Sharing file with ID:", selectedFileData.id);
+    const days = window.prompt("How many days should this link be valid?", "7");
+    if (!days) return;
+
+    const validDays = parseInt(days);
+    if (isNaN(validDays) || validDays <= 0) {
+      window.alert("Please enter a valid number of days.");
+      return;
+    }
+
+    try {
+      const shareLink = await FileService.shareFile(
+        selectedFileData.id,
+        validDays
+      );
+      if (shareLink) {
+        navigator.clipboard.writeText(shareLink);
+        window.alert(
+          `Share link copied to clipboard! It will be valid for ${validDays} days.`
+        );
+      } else {
+        window.alert("Failed to generate share link.");
+      }
+    } catch (error) {
+      console.error("Error sharing file:", error);
+      window.alert("An error occurred while trying to share the file.");
     }
   };
   return (
@@ -65,7 +105,9 @@ export function FileSideBar({
                 onClick={handleDownload}>
                 Download
               </Button>
-              <Button className="bg-gray-400 hover:bg-gray-500 transition-colors w-full">
+              <Button
+                onClick={handleShare}
+                className="bg-gray-400 hover:bg-gray-500 transition-colors w-full">
                 Share
               </Button>
               <Button
