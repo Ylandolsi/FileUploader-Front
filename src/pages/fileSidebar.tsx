@@ -31,7 +31,7 @@ export function FileSideBar({
     <>
       <div
         className="fixed inset-0 bg-black/10 backdrop-blur-sm z-10"
-        onClick={() => setselectedFileData(null)}
+        onClick={() => setselectedFileData(null)} // if we click outside the sidebar, close it
       />
 
       <div className="absolute w-full md:w-1/2 lg:w-1/3 top-0 right-0 h-full bg-gray-100 dark:bg-gray-700 p-4 rounded-l-2xl z-20 shadow-lg">

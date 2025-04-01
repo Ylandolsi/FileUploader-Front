@@ -10,9 +10,11 @@ const FolderItem = ({
   level,
   setCurrentFolderId,
   setFilesOfCurrentFolder,
+  currentFolderId,
 }: {
   folder: FolderBase;
   level: number;
+  currentFolderId: number;
   setCurrentFolderId: (id: number) => void;
   setFilesOfCurrentFolder: (files: FileType[]) => void;
 }) => {
@@ -53,7 +55,7 @@ const FolderItem = ({
   const paddingLeft = level * 16;
 
   return (
-    <div className="folder-item">
+    <div className="folder-item" key={folder.id}>
       <div
         onClick={handleClick}
         className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 py-2 transition-colors"
@@ -61,8 +63,16 @@ const FolderItem = ({
         <span className="mr-1">
           {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </span>
+        <span
+          className={`${
+            currentFolderId === folder.id
+              ? "text-blue-500 font-semibold"
+              : "text-black "
+          } mr-2`}>
+          {folder.name || "Unnamed Folder"}
+        </span>
         <Folder size={16} className="mr-2" />
-        <span>{folder.name || "Unnamed Folder"}</span>
+
         {loading && (
           <span className="ml-2 text-xs text-gray-500">loading...</span>
         )}
@@ -72,11 +82,11 @@ const FolderItem = ({
         <div className="folder-children">
           {subFolders.map((subFolder) => (
             <FolderItem
-              key={subFolder.id}
               folder={subFolder}
               level={level + 1}
               setCurrentFolderId={setCurrentFolderId}
               setFilesOfCurrentFolder={setFilesOfCurrentFolder}
+              currentFolderId={currentFolderId}
             />
           ))}
         </div>
@@ -126,9 +136,9 @@ export function LeftPart({
       <div className="mt-4">
         {folders.map((folder) => (
           <FolderItem
-            key={folder.id}
-            folder={folder}
+            folder={folders[0]}
             level={0}
+            currentFolderId={currentFolderId}
             setCurrentFolderId={setCurrentFolderId}
             setFilesOfCurrentFolder={setFilesOfCurrentFolder}
           />
