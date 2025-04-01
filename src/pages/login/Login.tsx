@@ -19,7 +19,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { authService } from "@/services/AuthService";
 import { useAuth } from "@/contexts/AuthContext";
-import { use } from "react";
+import { use, useEffect } from "react";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "Username is Required" }),
@@ -29,12 +29,18 @@ const formSchema = z.object({
 type typeForm = typeof formSchema;
 
 export function Login() {
-  const { login } = useAuth();
+  const { login, isLoggedIn } = useAuth();
 
   const navigate = useNavigate();
   const form = useForm<z.infer<typeForm>>({
     resolver: zodResolver(formSchema),
   });
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/");
+    }
+  }, [isLoggedIn]);
 
   function onSubmit(values: z.infer<typeForm>) {
     const { username, password } = values;
